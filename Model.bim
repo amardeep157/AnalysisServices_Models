@@ -1,0 +1,745 @@
+{
+  "name": "SemanticModel",
+  "compatibilityLevel": 1500,
+  "model": {
+    "culture": "en-US",
+    "dataSources": [
+      {
+        "type": "structured",
+        "name": "AzureBlobs/https://adls2amardeepstorage blob core windows net/",
+        "connectionDetails": {
+          "protocol": "azure-blobs",
+          "address": {
+            "account": "adls2amardeepstorage",
+            "domain": "blob.core.windows.net"
+          },
+          "authentication": null,
+          "query": null
+        },
+        "options": {},
+        "credential": {
+          "AuthenticationKind": "Key"
+        }
+      }
+    ],
+    "tables": [
+      {
+        "name": "FACT_SALES",
+        "columns": [
+          {
+            "name": "ProductKey",
+            "dataType": "int64",
+            "sourceColumn": "ProductKey"
+          },
+          {
+            "name": "CustomerKey",
+            "dataType": "int64",
+            "sourceColumn": "CustomerKey"
+          },
+          {
+            "name": "PromotionKey",
+            "dataType": "int64",
+            "sourceColumn": "PromotionKey"
+          },
+          {
+            "name": "CurrencyKey",
+            "dataType": "int64",
+            "sourceColumn": "CurrencyKey"
+          },
+          {
+            "name": "SalesTerritoryKey",
+            "dataType": "int64",
+            "sourceColumn": "SalesTerritoryKey"
+          },
+          {
+            "name": "Month_yyyyMM",
+            "dataType": "int64",
+            "sourceColumn": "Month_yyyyMM"
+          },
+          {
+            "name": "count_orders",
+            "dataType": "int64",
+            "sourceColumn": "count_orders"
+          },
+          {
+            "name": "sum_ConsumCost",
+            "dataType": "double",
+            "sourceColumn": "sum_ConsumCost"
+          },
+          {
+            "name": "sum_DiscountAmt",
+            "dataType": "int64",
+            "sourceColumn": "sum_DiscountAmt"
+          },
+          {
+            "name": "insert_date",
+            "dataType": "dateTime",
+            "sourceColumn": "insert_date"
+          },
+          {
+            "name": "insert_by",
+            "dataType": "string",
+            "sourceColumn": "insert_by"
+          },
+          {
+            "type": "calculated",
+            "name": "C_MultiCount",
+            "dataType": "boolean",
+            "isDataTypeInferred": true,
+            "expression": "[count_orders] > 1",
+            "formatString": "\"TRUE\";\"TRUE\";\"FALSE\""
+          },
+          {
+            "type": "calculated",
+            "name": "C_Discounted",
+            "dataType": "boolean",
+            "isDataTypeInferred": true,
+            "expression": "[sum_DiscountAmt]>0",
+            "formatString": "\"TRUE\";\"TRUE\";\"FALSE\""
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"AzureBlobs/https://adls2amardeepstorage blob core windows net/\",",
+                "    #\"adlsgen2-transformed1\" = Source{[Name=\"adlsgen2-transformed\"]}[Data],",
+                "    #\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/Fact/partition_date=2020-11-24/part-00000-tid-9210454285976053670-c5374f75-3d86-4b74-b052-5ea17d663713-9725-1 c000 csv\" = #\"adlsgen2-transformed1\"{[#\"Folder Path\"=\"https://adls2amardeepstorage.blob.core.windows.net/adlsgen2-transformed/\",Name=\"Write_Results/Dump_DataModel_FactSales/Fact/partition_date=2020-11-24/part-00000-tid-9210454285976053670-c5374f75-3d86-4b74-b052-5ea17d663713-9725-1.c000.csv\"]}[Content],",
+                "    #\"Imported CSV\" = Csv.Document(#\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/Fact/partition_date=2020-11-24/part-00000-tid-9210454285976053670-c5374f75-3d86-4b74-b052-5ea17d663713-9725-1 c000 csv\",[Delimiter=\",\", Columns=11, Encoding=1252, QuoteStyle=QuoteStyle.None]),",
+                "    #\"Promoted Headers\" = Table.PromoteHeaders(#\"Imported CSV\", [PromoteAllScalars=true]),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\",{{\"ProductKey\", Int64.Type}, {\"CustomerKey\", Int64.Type}, {\"PromotionKey\", Int64.Type}, {\"CurrencyKey\", Int64.Type}, {\"SalesTerritoryKey\", Int64.Type}, {\"Month_yyyyMM\", Int64.Type}, {\"count_orders\", Int64.Type}, {\"sum_ConsumCost\", type number}, {\"sum_DiscountAmt\", Int64.Type}, {\"insert_date\", type date}, {\"insert_by\", type text}})",
+                "in",
+                "    #\"Changed Type\""
+              ]
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Measure_Count_Order",
+            "expression": "COUNT(FACT_SALES[count_orders])"
+          },
+          {
+            "name": "DaysCurrentQuarterToDate",
+            "expression": "DATESQTD(FACT_SALES[insert_date])"
+          },
+          {
+            "name": "CostPerUnit",
+            "expression": "SUM(FACT_SALES[sum_ConsumCost])/SUM(FACT_SALES[count_orders])"
+          }
+        ]
+      },
+      {
+        "name": "DIM_CURRENCY",
+        "columns": [
+          {
+            "name": "CurrencyAlternateKey",
+            "dataType": "string",
+            "sourceColumn": "CurrencyAlternateKey"
+          },
+          {
+            "name": "CurrencyKey",
+            "dataType": "int64",
+            "sourceColumn": "CurrencyKey"
+          },
+          {
+            "name": "CurrencyName",
+            "dataType": "string",
+            "sourceColumn": "CurrencyName"
+          },
+          {
+            "name": "Custom_datetime",
+            "dataType": "string",
+            "sourceColumn": "Custom_datetime"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"AzureBlobs/https://adls2amardeepstorage blob core windows net/\",",
+                "    #\"adlsgen2-transformed1\" = Source{[Name=\"adlsgen2-transformed\"]}[Data],",
+                "    #\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/DIM_CURRENCY/part-00000-tid-8872507957469730905-dfc51000-3b82-4c87-aaf8-f949a52be0d0-9730-1-c000 csv\" = #\"adlsgen2-transformed1\"{[#\"Folder Path\"=\"https://adls2amardeepstorage.blob.core.windows.net/adlsgen2-transformed/\",Name=\"Write_Results/Dump_DataModel_FactSales/DIM_CURRENCY/part-00000-tid-8872507957469730905-dfc51000-3b82-4c87-aaf8-f949a52be0d0-9730-1-c000.csv\"]}[Content],",
+                "    #\"Imported CSV\" = Csv.Document(#\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/DIM_CURRENCY/part-00000-tid-8872507957469730905-dfc51000-3b82-4c87-aaf8-f949a52be0d0-9730-1-c000 csv\",[Delimiter=\",\", Columns=3, Encoding=1252, QuoteStyle=QuoteStyle.None]),",
+                "    #\"Promoted Headers\" = Table.PromoteHeaders(#\"Imported CSV\", [PromoteAllScalars=true]),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\",{{\"CurrencyAlternateKey\", type text}, {\"CurrencyKey\", Int64.Type}, {\"CurrencyName\", type text}}),",
+                "    #\"Added Custom\" = Table.AddColumn(#\"Changed Type\", \"Custom_datetime\", each DateTime.FixedLocalNow() as datetime)",
+                "in",
+                "    #\"Added Custom\""
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "DIM_CUSTOMER",
+        "columns": [
+          {
+            "name": "AddressLine1",
+            "dataType": "string",
+            "sourceColumn": "AddressLine1"
+          },
+          {
+            "name": "AddressLine2",
+            "dataType": "string",
+            "sourceColumn": "AddressLine2"
+          },
+          {
+            "name": "BirthDate",
+            "dataType": "dateTime",
+            "sourceColumn": "BirthDate"
+          },
+          {
+            "name": "CommuteDistance",
+            "dataType": "string",
+            "sourceColumn": "CommuteDistance"
+          },
+          {
+            "name": "CustomerAlternateKey",
+            "dataType": "string",
+            "sourceColumn": "CustomerAlternateKey"
+          },
+          {
+            "name": "CustomerKey",
+            "dataType": "int64",
+            "sourceColumn": "CustomerKey"
+          },
+          {
+            "name": "DateFirstPurchase",
+            "dataType": "dateTime",
+            "sourceColumn": "DateFirstPurchase"
+          },
+          {
+            "name": "EmailAddress",
+            "dataType": "string",
+            "sourceColumn": "EmailAddress"
+          },
+          {
+            "name": "EnglishEducation",
+            "dataType": "string",
+            "sourceColumn": "EnglishEducation"
+          },
+          {
+            "name": "EnglishOccupation",
+            "dataType": "string",
+            "sourceColumn": "EnglishOccupation"
+          },
+          {
+            "name": "FirstName",
+            "dataType": "string",
+            "sourceColumn": "FirstName"
+          },
+          {
+            "name": "FrenchEducation",
+            "dataType": "string",
+            "sourceColumn": "FrenchEducation"
+          },
+          {
+            "name": "FrenchOccupation",
+            "dataType": "string",
+            "sourceColumn": "FrenchOccupation"
+          },
+          {
+            "name": "Gender",
+            "dataType": "string",
+            "sourceColumn": "Gender"
+          },
+          {
+            "name": "GeographyKey",
+            "dataType": "int64",
+            "sourceColumn": "GeographyKey"
+          },
+          {
+            "name": "HouseOwnerFlag",
+            "dataType": "int64",
+            "sourceColumn": "HouseOwnerFlag"
+          },
+          {
+            "name": "LastName",
+            "dataType": "string",
+            "sourceColumn": "LastName"
+          },
+          {
+            "name": "MaritalStatus",
+            "dataType": "string",
+            "sourceColumn": "MaritalStatus"
+          },
+          {
+            "name": "MiddleName",
+            "dataType": "string",
+            "sourceColumn": "MiddleName"
+          },
+          {
+            "name": "NameStyle",
+            "dataType": "boolean",
+            "sourceColumn": "NameStyle"
+          },
+          {
+            "name": "NumberCarsOwned",
+            "dataType": "int64",
+            "sourceColumn": "NumberCarsOwned"
+          },
+          {
+            "name": "NumberChildrenAtHome",
+            "dataType": "int64",
+            "sourceColumn": "NumberChildrenAtHome"
+          },
+          {
+            "name": "Phone",
+            "dataType": "string",
+            "sourceColumn": "Phone"
+          },
+          {
+            "name": "SpanishEducation",
+            "dataType": "string",
+            "sourceColumn": "SpanishEducation"
+          },
+          {
+            "name": "SpanishOccupation",
+            "dataType": "string",
+            "sourceColumn": "SpanishOccupation"
+          },
+          {
+            "name": "Suffix",
+            "dataType": "string",
+            "sourceColumn": "Suffix"
+          },
+          {
+            "name": "Title",
+            "dataType": "string",
+            "sourceColumn": "Title"
+          },
+          {
+            "name": "TotalChildren",
+            "dataType": "int64",
+            "sourceColumn": "TotalChildren"
+          },
+          {
+            "name": "YearlyIncome",
+            "dataType": "int64",
+            "sourceColumn": "YearlyIncome"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"AzureBlobs/https://adls2amardeepstorage blob core windows net/\",",
+                "    #\"adlsgen2-transformed1\" = Source{[Name=\"adlsgen2-transformed\"]}[Data],",
+                "    #\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/DIM_CUSTOMER/part-00000-tid-5465452373780290130-e94e6ec2-0240-4a28-b393-7ec0fc004c56-9728-1-c000 csv\" = #\"adlsgen2-transformed1\"{[#\"Folder Path\"=\"https://adls2amardeepstorage.blob.core.windows.net/adlsgen2-transformed/\",Name=\"Write_Results/Dump_DataModel_FactSales/DIM_CUSTOMER/part-00000-tid-5465452373780290130-e94e6ec2-0240-4a28-b393-7ec0fc004c56-9728-1-c000.csv\"]}[Content],",
+                "    #\"Imported CSV\" = Csv.Document(#\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/DIM_CUSTOMER/part-00000-tid-5465452373780290130-e94e6ec2-0240-4a28-b393-7ec0fc004c56-9728-1-c000 csv\",[Delimiter=\",\", Columns=29, Encoding=1252, QuoteStyle=QuoteStyle.None]),",
+                "    #\"Promoted Headers\" = Table.PromoteHeaders(#\"Imported CSV\", [PromoteAllScalars=true]),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\",{{\"AddressLine1\", type text}, {\"AddressLine2\", type text}, {\"BirthDate\", type datetime}, {\"CommuteDistance\", type text}, {\"CustomerAlternateKey\", type text}, {\"CustomerKey\", Int64.Type}, {\"DateFirstPurchase\", type datetime}, {\"EmailAddress\", type text}, {\"EnglishEducation\", type text}, {\"EnglishOccupation\", type text}, {\"FirstName\", type text}, {\"FrenchEducation\", type text}, {\"FrenchOccupation\", type text}, {\"Gender\", type text}, {\"GeographyKey\", Int64.Type}, {\"HouseOwnerFlag\", Int64.Type}, {\"LastName\", type text}, {\"MaritalStatus\", type text}, {\"MiddleName\", type text}, {\"NameStyle\", type logical}, {\"NumberCarsOwned\", Int64.Type}, {\"NumberChildrenAtHome\", Int64.Type}, {\"Phone\", type text}, {\"SpanishEducation\", type text}, {\"SpanishOccupation\", type text}, {\"Suffix\", type text}, {\"Title\", type text}, {\"TotalChildren\", Int64.Type}, {\"YearlyIncome\", Int64.Type}})",
+                "in",
+                "    #\"Changed Type\""
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "DIM_PRODUCT",
+        "columns": [
+          {
+            "name": "Class",
+            "dataType": "string",
+            "sourceColumn": "Class"
+          },
+          {
+            "name": "Color",
+            "dataType": "string",
+            "sourceColumn": "Color"
+          },
+          {
+            "name": "DaysToManufacture",
+            "dataType": "int64",
+            "sourceColumn": "DaysToManufacture"
+          },
+          {
+            "name": "DealerPrice",
+            "dataType": "string",
+            "sourceColumn": "DealerPrice"
+          },
+          {
+            "name": "EndDate",
+            "dataType": "string",
+            "sourceColumn": "EndDate"
+          },
+          {
+            "name": "EnglishDescription",
+            "dataType": "string",
+            "sourceColumn": "EnglishDescription"
+          },
+          {
+            "name": "EnglishProductName",
+            "dataType": "string",
+            "sourceColumn": "EnglishProductName"
+          },
+          {
+            "name": "FinishedGoodsFlag",
+            "dataType": "boolean",
+            "sourceColumn": "FinishedGoodsFlag"
+          },
+          {
+            "name": "ListPrice",
+            "dataType": "string",
+            "sourceColumn": "ListPrice"
+          },
+          {
+            "name": "ModelName",
+            "dataType": "string",
+            "sourceColumn": "ModelName"
+          },
+          {
+            "name": "ProductAlternateKey",
+            "dataType": "string",
+            "sourceColumn": "ProductAlternateKey"
+          },
+          {
+            "name": "ProductKey",
+            "dataType": "int64",
+            "sourceColumn": "ProductKey"
+          },
+          {
+            "name": "ProductLine",
+            "dataType": "string",
+            "sourceColumn": "ProductLine"
+          },
+          {
+            "name": "ProductSubcategoryKey",
+            "dataType": "string",
+            "sourceColumn": "ProductSubcategoryKey"
+          },
+          {
+            "name": "ReorderPoint",
+            "dataType": "int64",
+            "sourceColumn": "ReorderPoint"
+          },
+          {
+            "name": "SafetyStockLevel",
+            "dataType": "int64",
+            "sourceColumn": "SafetyStockLevel"
+          },
+          {
+            "name": "Size",
+            "dataType": "string",
+            "sourceColumn": "Size"
+          },
+          {
+            "name": "SizeRange",
+            "dataType": "string",
+            "sourceColumn": "SizeRange"
+          },
+          {
+            "name": "StandardCost",
+            "dataType": "string",
+            "sourceColumn": "StandardCost"
+          },
+          {
+            "name": "StartDate",
+            "dataType": "dateTime",
+            "sourceColumn": "StartDate"
+          },
+          {
+            "name": "Status",
+            "dataType": "string",
+            "sourceColumn": "Status"
+          },
+          {
+            "name": "Weight",
+            "dataType": "int64",
+            "sourceColumn": "Weight"
+          },
+          {
+            "name": "WeightUnitMeasureCode",
+            "dataType": "string",
+            "sourceColumn": "WeightUnitMeasureCode"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"AzureBlobs/https://adls2amardeepstorage blob core windows net/\",",
+                "    #\"adlsgen2-transformed1\" = Source{[Name=\"adlsgen2-transformed\"]}[Data],",
+                "    #\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/DIM_PRODUCT/part-00000-tid-2538603691915404848-828d6ae7-263a-4058-b22a-824496f0a194-9732-1-c000 csv\" = #\"adlsgen2-transformed1\"{[#\"Folder Path\"=\"https://adls2amardeepstorage.blob.core.windows.net/adlsgen2-transformed/\",Name=\"Write_Results/Dump_DataModel_FactSales/DIM_PRODUCT/part-00000-tid-2538603691915404848-828d6ae7-263a-4058-b22a-824496f0a194-9732-1-c000.csv\"]}[Content],",
+                "    #\"Imported CSV\" = Csv.Document(#\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/DIM_PRODUCT/part-00000-tid-2538603691915404848-828d6ae7-263a-4058-b22a-824496f0a194-9732-1-c000 csv\",[Delimiter=\",\", Columns=36, Encoding=1252, QuoteStyle=QuoteStyle.None]),",
+                "    #\"Promoted Headers\" = Table.PromoteHeaders(#\"Imported CSV\", [PromoteAllScalars=true]),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\",{{\"ArabicDescription\", type text}, {\"ChineseDescription\", type text}, {\"Class\", type text}, {\"Color\", type text}, {\"DaysToManufacture\", Int64.Type}, {\"DealerPrice\", type text}, {\"EndDate\", type text}, {\"EnglishDescription\", type text}, {\"EnglishProductName\", type text}, {\"FinishedGoodsFlag\", type logical}, {\"FrenchDescription\", type text}, {\"FrenchProductName\", type text}, {\"GermanDescription\", type text}, {\"HebrewDescription\", type text}, {\"JapaneseDescription\", type text}, {\"LargePhoto\", type text}, {\"ListPrice\", type text}, {\"ModelName\", type text}, {\"ProductAlternateKey\", type text}, {\"ProductKey\", Int64.Type}, {\"ProductLine\", type text}, {\"ProductSubcategoryKey\", type text}, {\"ReorderPoint\", Int64.Type}, {\"SafetyStockLevel\", Int64.Type}, {\"Size\", type text}, {\"SizeRange\", type text}, {\"SizeUnitMeasureCode\", type text}, {\"SpanishProductName\", type text}, {\"StandardCost\", type text}, {\"StartDate\", type datetime}, {\"Status\", type text}, {\"Style\", type text}, {\"ThaiDescription\", type text}, {\"TurkishDescription\", type text}, {\"Weight\", Int64.Type}, {\"WeightUnitMeasureCode\", type text}}),",
+                "    #\"Removed Columns\" = Table.RemoveColumns(#\"Changed Type\",{\"ArabicDescription\", \"ChineseDescription\", \"SizeUnitMeasureCode\", \"SpanishProductName\", \"Style\", \"ThaiDescription\", \"TurkishDescription\", \"GermanDescription\", \"HebrewDescription\", \"JapaneseDescription\", \"LargePhoto\", \"FrenchDescription\", \"FrenchProductName\"})",
+                "in",
+                "    #\"Removed Columns\""
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "DIM_PROMOTION",
+        "columns": [
+          {
+            "name": "PromotionKey",
+            "dataType": "int64",
+            "sourceColumn": "PromotionKey"
+          },
+          {
+            "name": "DiscountPct",
+            "dataType": "double",
+            "sourceColumn": "DiscountPct"
+          },
+          {
+            "name": "EndDate",
+            "dataType": "dateTime",
+            "sourceColumn": "EndDate"
+          },
+          {
+            "name": "EnglishPromotionCategory",
+            "dataType": "string",
+            "sourceColumn": "EnglishPromotionCategory"
+          },
+          {
+            "name": "EnglishPromotionName",
+            "dataType": "string",
+            "sourceColumn": "EnglishPromotionName"
+          },
+          {
+            "name": "EnglishPromotionType",
+            "dataType": "string",
+            "sourceColumn": "EnglishPromotionType"
+          },
+          {
+            "name": "MaxQty",
+            "dataType": "int64",
+            "sourceColumn": "MaxQty"
+          },
+          {
+            "name": "MinQty",
+            "dataType": "int64",
+            "sourceColumn": "MinQty"
+          },
+          {
+            "name": "PromotionAlternateKey",
+            "dataType": "int64",
+            "sourceColumn": "PromotionAlternateKey"
+          },
+          {
+            "name": "StartDate",
+            "dataType": "dateTime",
+            "sourceColumn": "StartDate"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"AzureBlobs/https://adls2amardeepstorage blob core windows net/\",",
+                "    #\"adlsgen2-transformed1\" = Source{[Name=\"adlsgen2-transformed\"]}[Data],",
+                "    #\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/DIM_PROMOTION/part-00000-tid-3293412404346844559-d386cc12-16c8-485d-b9bb-b9017faa8658-9731-1-c000 csv\" = #\"adlsgen2-transformed1\"{[#\"Folder Path\"=\"https://adls2amardeepstorage.blob.core.windows.net/adlsgen2-transformed/\",Name=\"Write_Results/Dump_DataModel_FactSales/DIM_PROMOTION/part-00000-tid-3293412404346844559-d386cc12-16c8-485d-b9bb-b9017faa8658-9731-1-c000.csv\"]}[Content],",
+                "    #\"Imported CSV\" = Csv.Document(#\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/DIM_PROMOTION/part-00000-tid-3293412404346844559-d386cc12-16c8-485d-b9bb-b9017faa8658-9731-1-c000 csv\",[Delimiter=\",\", Columns=16, Encoding=1252, QuoteStyle=QuoteStyle.None]),",
+                "    #\"Promoted Headers\" = Table.PromoteHeaders(#\"Imported CSV\", [PromoteAllScalars=true]),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\",{{\"DiscountPct\", type number}, {\"EndDate\", type datetime}, {\"EnglishPromotionCategory\", type text}, {\"EnglishPromotionName\", type text}, {\"EnglishPromotionType\", type text}, {\"FrenchPromotionCategory\", type text}, {\"FrenchPromotionName\", type text}, {\"FrenchPromotionType\", type text}, {\"MaxQty\", Int64.Type}, {\"MinQty\", Int64.Type}, {\"PromotionAlternateKey\", Int64.Type}, {\"PromotionKey\", Int64.Type}, {\"SpanishPromotionCategory\", type text}, {\"SpanishPromotionName\", type text}, {\"SpanishPromotionType\", type text}, {\"StartDate\", type datetime}}),",
+                "    #\"Removed Columns\" = Table.RemoveColumns(#\"Changed Type\",{\"FrenchPromotionCategory\", \"FrenchPromotionName\", \"FrenchPromotionType\", \"SpanishPromotionCategory\", \"SpanishPromotionName\", \"SpanishPromotionType\"}),",
+                "    #\"Reordered Columns\" = Table.ReorderColumns(#\"Removed Columns\",{\"PromotionKey\", \"DiscountPct\", \"EndDate\", \"EnglishPromotionCategory\", \"EnglishPromotionName\", \"EnglishPromotionType\", \"MaxQty\", \"MinQty\", \"PromotionAlternateKey\", \"StartDate\"})",
+                "in",
+                "    #\"Reordered Columns\""
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "DIM_SALESTERRITORY",
+        "columns": [
+          {
+            "name": "SalesTerritoryAlternateKey",
+            "dataType": "int64",
+            "sourceColumn": "SalesTerritoryAlternateKey"
+          },
+          {
+            "name": "SalesTerritoryCountry",
+            "dataType": "string",
+            "sourceColumn": "SalesTerritoryCountry"
+          },
+          {
+            "name": "SalesTerritoryGroup",
+            "dataType": "string",
+            "sourceColumn": "SalesTerritoryGroup"
+          },
+          {
+            "name": "SalesTerritoryKey",
+            "dataType": "int64",
+            "sourceColumn": "SalesTerritoryKey"
+          },
+          {
+            "name": "SalesTerritoryRegion",
+            "dataType": "string",
+            "sourceColumn": "SalesTerritoryRegion"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"AzureBlobs/https://adls2amardeepstorage blob core windows net/\",",
+                "    #\"adlsgen2-transformed1\" = Source{[Name=\"adlsgen2-transformed\"]}[Data],",
+                "    #\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/DIM_SALESTERRITORY/part-00000-tid-887653621353299856-8c8d15ca-4229-4b42-b67c-1c358e7a2458-9729-1-c000 csv\" = #\"adlsgen2-transformed1\"{[#\"Folder Path\"=\"https://adls2amardeepstorage.blob.core.windows.net/adlsgen2-transformed/\",Name=\"Write_Results/Dump_DataModel_FactSales/DIM_SALESTERRITORY/part-00000-tid-887653621353299856-8c8d15ca-4229-4b42-b67c-1c358e7a2458-9729-1-c000.csv\"]}[Content],",
+                "    #\"Imported CSV\" = Csv.Document(#\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/DIM_SALESTERRITORY/part-00000-tid-887653621353299856-8c8d15ca-4229-4b42-b67c-1c358e7a2458-9729-1-c000 csv\",[Delimiter=\",\", Columns=6, Encoding=1252, QuoteStyle=QuoteStyle.None]),",
+                "    #\"Promoted Headers\" = Table.PromoteHeaders(#\"Imported CSV\", [PromoteAllScalars=true]),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\",{{\"SalesTerritoryAlternateKey\", Int64.Type}, {\"SalesTerritoryCountry\", type text}, {\"SalesTerritoryGroup\", type text}, {\"SalesTerritoryImage\", type text}, {\"SalesTerritoryKey\", Int64.Type}, {\"SalesTerritoryRegion\", type text}}),",
+                "    #\"Removed Columns\" = Table.RemoveColumns(#\"Changed Type\",{\"SalesTerritoryImage\"})",
+                "in",
+                "    #\"Removed Columns\""
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "DIM_DATE",
+        "columns": [
+          {
+            "name": "Date_Pk_yyyyMM",
+            "dataType": "int64",
+            "sourceColumn": "Date_Pk_yyyyMM"
+          },
+          {
+            "name": "Quarter_yyyyq",
+            "dataType": "int64",
+            "sourceColumn": "Quarter_yyyyq"
+          },
+          {
+            "name": "EnglishMonthName",
+            "dataType": "string",
+            "sourceColumn": "EnglishMonthName"
+          },
+          {
+            "name": "CalendarYear",
+            "dataType": "int64",
+            "sourceColumn": "CalendarYear"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"AzureBlobs/https://adls2amardeepstorage blob core windows net/\",",
+                "    #\"adlsgen2-transformed1\" = Source{[Name=\"adlsgen2-transformed\"]}[Data],",
+                "    #\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/DIM_DATE/part-00000-tid-8587605117336157792-d3b2e65a-9595-415b-bcc3-49fd4282df0f-9727-1-c000 csv\" = #\"adlsgen2-transformed1\"{[#\"Folder Path\"=\"https://adls2amardeepstorage.blob.core.windows.net/adlsgen2-transformed/\",Name=\"Write_Results/Dump_DataModel_FactSales/DIM_DATE/part-00000-tid-8587605117336157792-d3b2e65a-9595-415b-bcc3-49fd4282df0f-9727-1-c000.csv\"]}[Content],",
+                "    #\"Imported CSV\" = Csv.Document(#\"https://adls2amardeepstorage blob core windows net/adlsgen2-transformed/_Write_Results/Dump_DataModel_FactSales/DIM_DATE/part-00000-tid-8587605117336157792-d3b2e65a-9595-415b-bcc3-49fd4282df0f-9727-1-c000 csv\",[Delimiter=\",\", Columns=4, Encoding=1252, QuoteStyle=QuoteStyle.None]),",
+                "    #\"Promoted Headers\" = Table.PromoteHeaders(#\"Imported CSV\", [PromoteAllScalars=true]),",
+                "    #\"Changed Type\" = Table.TransformColumnTypes(#\"Promoted Headers\",{{\"Month_yyyyMM\", Int64.Type}, {\"EnglishMonthName\", type text}, {\"Quarter_yyyyq\", Int64.Type}, {\"CalendarYear\", Int64.Type}}),",
+                "    #\"Renamed Columns\" = Table.RenameColumns(#\"Changed Type\",{{\"Month_yyyyMM\", \"Date_Pk_yyyyMM\"}}),",
+                "    #\"Reordered Columns\" = Table.ReorderColumns(#\"Renamed Columns\",{\"Date_Pk_yyyyMM\", \"Quarter_yyyyq\", \"EnglishMonthName\", \"CalendarYear\"})",
+                "in",
+                "    #\"Reordered Columns\""
+              ]
+            }
+          }
+        ],
+        "hierarchies": [
+          {
+            "name": "Time",
+            "levels": [
+              {
+                "name": "Date_Pk_yyyyMM",
+                "ordinal": 2,
+                "column": "Date_Pk_yyyyMM"
+              },
+              {
+                "name": "Quarter_yyyyq",
+                "ordinal": 1,
+                "column": "Quarter_yyyyq"
+              },
+              {
+                "name": "CalendarYear",
+                "ordinal": 0,
+                "column": "CalendarYear"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "name": "6349bef5-edd5-46d1-9d7a-9302028f4550",
+        "toCardinality": "many",
+        "fromTable": "FACT_SALES",
+        "fromColumn": "ProductKey",
+        "toTable": "DIM_PRODUCT",
+        "toColumn": "ProductKey",
+        "crossFilteringBehavior": "bothDirections"
+      },
+      {
+        "name": "b66010e9-4556-4195-af85-f6982425d682",
+        "fromTable": "FACT_SALES",
+        "fromColumn": "CurrencyKey",
+        "toTable": "DIM_CURRENCY",
+        "toColumn": "CurrencyKey"
+      },
+      {
+        "name": "ea691aac-23f1-4489-a052-9ddbc6ab997d",
+        "fromTable": "FACT_SALES",
+        "fromColumn": "SalesTerritoryKey",
+        "toTable": "DIM_SALESTERRITORY",
+        "toColumn": "SalesTerritoryKey"
+      },
+      {
+        "name": "32378421-2a8e-4135-a2b2-2745906fbb7d",
+        "fromTable": "FACT_SALES",
+        "fromColumn": "Month_yyyyMM",
+        "toTable": "DIM_DATE",
+        "toColumn": "Date_Pk_yyyyMM"
+      },
+      {
+        "name": "778753bb-5916-4dcc-b231-22d4c6943797",
+        "fromTable": "FACT_SALES",
+        "fromColumn": "PromotionKey",
+        "toTable": "DIM_PROMOTION",
+        "toColumn": "PromotionKey"
+      },
+      {
+        "name": "7508dc06-6105-4a78-b639-20f35fe09bbf",
+        "fromTable": "FACT_SALES",
+        "fromColumn": "CustomerKey",
+        "toTable": "DIM_CUSTOMER",
+        "toColumn": "CustomerKey"
+      }
+    ],
+    "annotations": [
+      {
+        "name": "ClientCompatibilityLevel",
+        "value": "600"
+      }
+    ]
+  },
+  "id": "SemanticModel"
+}
